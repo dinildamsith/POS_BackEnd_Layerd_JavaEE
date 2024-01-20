@@ -58,26 +58,74 @@ public class OrderDAOImpl implements OrderDAO {
     @Override
     public void save(OrderDTO dto, Connection connection) {
 
-        PreparedStatement preparedStatement = connection.prepareStatement(SAVE_ORDER_DETAILS);
-        preparedStatement.setString(1,dto.getOrder_Id());
-        preparedStatement.setString(2,dto.getCustomer_Id());
-        preparedStatement.setString(3,dto.getDate());
+//        PreparedStatement preparedStatement = connection.prepareStatement(SAVE_ORDER_DETAILS);
+//        preparedStatement.setString(1,dto.getOrder_Id());
+//        preparedStatement.setString(2,dto.getCustomer_Id());
+//        preparedStatement.setString(3,dto.getDate());
+//
+//        if (preparedStatement.executeUpdate() !=0){
+//            logger.info("Save");
+//            PreparedStatement preparedStatement1 = connection.prepareStatement(PLACE_ORDER);
+//            preparedStatement1.setString(1,dto.getOrder_Id());
+//            preparedStatement1.setString(2,dto.getItem_Name());
+//            preparedStatement1.setInt(3,dto.getQty());
+//            preparedStatement1.setDouble(4,dto.getTotal());
+//
+//            if (preparedStatement1.executeUpdate() !=0){
+//                logger.info("Save");
+//            }else {
+//                logger.info("Not Save");
+//            }
+//        }else{
+//
+//        }
 
-        if (preparedStatement.executeUpdate() !=0){
-            logger.info("Save");
-            PreparedStatement preparedStatement1 = connection.prepareStatement(PLACE_ORDER);
-            preparedStatement1.setString(1,dto.getOrder_Id());
-            preparedStatement1.setString(2,dto.getItem_Name());
-            preparedStatement1.setInt(3,dto.getQty());
-            preparedStatement1.setDouble(4,dto.getTotal());
+        try {
+            // Assuming 'connection' is your database connection
+            connection.setAutoCommit(false);
 
-            if (preparedStatement1.executeUpdate() !=0){
-                logger.info("Save");
-            }else {
-                logger.info("Not Save");
+            // Save order details
+            PreparedStatement preparedStatement = connection.prepareStatement(SAVE_ORDER_DETAILS);
+            preparedStatement.setString(1, dto.getOrder_Id());
+            preparedStatement.setString(2, dto.getCustomer_Id());
+            preparedStatement.setString(3, dto.getDate());
+
+            if (preparedStatement.executeUpdate() != 0) {
+                logger.info("Order details saved");
+
+                // Place order
+                PreparedStatement preparedStatement1 = connection.prepareStatement(PLACE_ORDER);
+                preparedStatement1.setString(1, dto.getOrder_Id());
+                preparedStatement1.setString(2, dto.getItem_Name());
+                preparedStatement1.setInt(3, dto.getQty());
+                preparedStatement1.setDouble(4, dto.getTotal());
+
+                if (preparedStatement1.executeUpdate() != 0) {
+                    logger.info("Order placed");
+
+                    // If everything is successful, commit the transaction
+                    connection.commit();
+                } else {
+                    logger.info("Failed to place order");
+                    // If placing the order fails, roll back the transaction
+                    connection.rollback();
+                }
+            } else {
+                logger.info("Failed to save order details");
             }
-        }else{
-
+        } catch (SQLException e) {
+            // Handle exceptions
+            e.printStackTrace();
+        } finally {
+            // Always close resources in the 'finally' block
+            try {
+                if (connection != null) {
+                    connection.setAutoCommit(true); // Reset auto-commit to true
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
 
 
