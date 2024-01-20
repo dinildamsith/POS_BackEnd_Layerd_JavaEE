@@ -56,79 +56,46 @@ public class OrderDAOImpl implements OrderDAO {
 
     @SneakyThrows
     @Override
-    public void save(OrderDTO dto, Connection connection) {
-
-//        PreparedStatement preparedStatement = connection.prepareStatement(SAVE_ORDER_DETAILS);
-//        preparedStatement.setString(1,dto.getOrder_Id());
-//        preparedStatement.setString(2,dto.getCustomer_Id());
-//        preparedStatement.setString(3,dto.getDate());
-//
-//        if (preparedStatement.executeUpdate() !=0){
-//            logger.info("Save");
-//            PreparedStatement preparedStatement1 = connection.prepareStatement(PLACE_ORDER);
-//            preparedStatement1.setString(1,dto.getOrder_Id());
-//            preparedStatement1.setString(2,dto.getItem_Name());
-//            preparedStatement1.setInt(3,dto.getQty());
-//            preparedStatement1.setDouble(4,dto.getTotal());
-//
-//            if (preparedStatement1.executeUpdate() !=0){
-//                logger.info("Save");
-//            }else {
-//                logger.info("Not Save");
-//            }
-//        }else{
-//
-//        }
+    public void save(OrderDTO orderDTO, Connection connection) {
 
         try {
-            // Assuming 'connection' is your database connection
+            // Disable auto-commit to start a transaction
             connection.setAutoCommit(false);
 
-            // Save order details
             PreparedStatement preparedStatement = connection.prepareStatement(SAVE_ORDER_DETAILS);
-            preparedStatement.setString(1, dto.getOrder_Id());
-            preparedStatement.setString(2, dto.getCustomer_Id());
-            preparedStatement.setString(3, dto.getDate());
+            preparedStatement.setString(1, orderDTO.getOrder_Id());
+            preparedStatement.setString(2, orderDTO.getCustomer_Id());
+            preparedStatement.setString(3, orderDTO.getDate());
 
-            if (preparedStatement.executeUpdate() != 0) {
-                logger.info("Order details saved");
+            // Execute the first query
+            preparedStatement.executeUpdate();
 
-                // Place order
-                PreparedStatement preparedStatement1 = connection.prepareStatement(PLACE_ORDER);
-                preparedStatement1.setString(1, dto.getOrder_Id());
-                preparedStatement1.setString(2, dto.getItem_Name());
-                preparedStatement1.setInt(3, dto.getQty());
-                preparedStatement1.setDouble(4, dto.getTotal());
+            PreparedStatement preparedStatement1 = connection.prepareStatement(PLACE_ORDER);
+            preparedStatement1.setString(1, orderDTO.getOrder_Id());
+            preparedStatement1.setString(2, orderDTO.getItem_Name());
+            preparedStatement1.setInt(3, orderDTO.getQty());
+            preparedStatement1.setDouble(4, orderDTO.getTotal());
 
-                if (preparedStatement1.executeUpdate() != 0) {
-                    logger.info("Order placed");
+            // Execute the second query
+            preparedStatement1.executeUpdate();
 
-                    // If everything is successful, commit the transaction
-                    connection.commit();
-                } else {
-                    logger.info("Failed to place order");
-                    // If placing the order fails, roll back the transaction
-                    connection.rollback();
-                }
-            } else {
-                logger.info("Failed to save order details");
-            }
-        } catch (SQLException e) {
-            // Handle exceptions
+            // If everything is successful, commit the transaction
+            connection.commit();
+        } catch (Exception e) {
+            // If any exception occurs, rollback the transaction
+            connection.rollback();
             e.printStackTrace();
         } finally {
-            // Always close resources in the 'finally' block
+            // Always reset auto-commit to true and close resources in the 'finally' block
             try {
                 if (connection != null) {
-                    connection.setAutoCommit(true); // Reset auto-commit to true
-                    connection.close();
+                    connection.setAutoCommit(true);
+
                 }
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-
-
 
     }
 
